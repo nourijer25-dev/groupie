@@ -1,0 +1,26 @@
+{{define "index.html"}}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Artists</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<h1 class="title">GROUPIE-TRACKER</h1>
+
+<div class="grid">
+    {{range .}}
+    <div class="card">
+        <img src="{{.Image}}" alt="{{.Name}}">
+        <h2>{{.Name}}</h2>
+        <p>Creation: {{.CreationDate}}</p>
+        <a class="btn" href="/artist?id={{.ID}}">View Details</a>
+    </div>
+    {{end}}
+</div>
+
+</body>
+</html>
+{{end}}

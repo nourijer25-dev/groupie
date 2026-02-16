@@ -1,0 +1,60 @@
+{{define "artist.html"}}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{.Name}}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<a href="/" class="btn">Back</a>
+
+
+<div class="details-container">
+
+    <div class="details-left">
+        <img src="{{.Image}}" class="details-img">
+        <h1>{{.Name}}</h1>
+    </div>
+
+    <div class="details-right">
+
+        <div class="box">
+            <h3>Creation Date</h3>
+            <p>{{.CreationDate}}</p>
+        </div>
+
+        <div class="box">
+            <h3>First Album</h3>
+            <p>{{.FirstAlbum}}</p>
+        </div>
+
+        <div class="box">
+            <h3>Members</h3>
+            <ul>
+                {{range .Members}}
+                <li>{{.}}</li>
+                {{end}}
+            </ul>
+        </div>
+
+        <div class="box">
+            <h3>Concert Dates & Locations</h3>
+            {{range $place, $dates := .Relations}}
+                <p><strong>📍{{$place}}</strong></p>
+                <ul>
+                    {{range $dates}}
+                    <li>{{.}}</li>
+                    {{end}}
+                </ul>
+            {{end}}
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
+{{end}}
