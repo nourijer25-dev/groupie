@@ -12,9 +12,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to load data:", err)
 	}
-	fs := http.FileServer(http.Dir("static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
-
+	http.Handle("/static/", http.StripPrefix("/static/", http.HandlerFunc(handleStatic)))
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/artist", artistHandler)
 

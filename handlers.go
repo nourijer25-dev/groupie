@@ -5,15 +5,25 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
+
+func handleStatic(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Path
+	if strings.HasSuffix(path, "/") || path == "" || strings.Contains(path, "..") {
+		HandleError(w, http.StatusForbidden, "Forbidden")
+		return
+	}
+	fs := http.FileServer(http.Dir("./static"))
+	fs.ServeHTTP(w, r)
+}
 
 func testApi(url string) bool {
 	client := http.Client{
 		Timeout: 5 * time.Second,
 	}
-
-	resp, err := client.Get(url) 
+	resp, err := client.Get(url)
 	if err != nil {
 		return false
 	}
@@ -40,16 +50,19 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-		if !testApi(artistsCache[0].Image) {
-			HandleError(w,http.StatusInternalServerError, "internal server error")
-			return
-		}
+	if !testApi(artistsCache[0].Image) {
+		HandleError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
 	tmpl := template.Must(template.ParseFiles("templates/index.html"))
 	tmpl.ExecuteTemplate(w, "index.html", artistsCache)
 }
 
 func artistHandler(w http.ResponseWriter, r *http.Request) {
-
+	if r.URL.RawQuery == "" {
+		HandleError(w, http.StatusBadRequest, "Missing artist ID")
+		return
+	}
 	idStr := r.URL.Query().Get("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -64,7 +77,7 @@ func artistHandler(w http.ResponseWriter, r *http.Request) {
 		HandleError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-		if !testApi(artistsCache[id-1].Image) {
+	if !testApi(artistsCache[id-1].Image) {
 		fmt.Println("url:", artistsCache[id-1].Image)
 		HandleError(w, http.StatusInternalServerError, "Failed to fetch image")
 		return
