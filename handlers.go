@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +17,13 @@ func handleStatic(w http.ResponseWriter, r *http.Request) {
 		HandleError(w, http.StatusForbidden, "Forbidden")
 		return
 	}
+	fullPath := filepath.Join("./static", path)
+	_, err := os.Stat(fullPath)
+	if  os.IsNotExist(err) {
+		HandleError(w, http.StatusNotFound, "File not found")
+		return
+	}
+
 	fs := http.FileServer(http.Dir("./static"))
 	fs.ServeHTTP(w, r)
 }
