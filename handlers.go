@@ -4,29 +4,9 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 )
-
-func handleStatic(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path
-	if strings.HasSuffix(path, "/") || path == "" || strings.Contains(path, "..") {
-		HandleError(w, http.StatusForbidden, "Forbidden")
-		return
-	}
-	fullPath := filepath.Join("./static", path)
-	_, err := os.Stat(fullPath)
-	if  os.IsNotExist(err) {
-		HandleError(w, http.StatusNotFound, "File not found")
-		return
-	}
-
-	fs := http.FileServer(http.Dir("./static"))
-	fs.ServeHTTP(w, r)
-}
 
 func testApi(url string) bool {
 	client := http.Client{
@@ -42,25 +22,25 @@ func testApi(url string) bool {
 
 func HandleError(w http.ResponseWriter, code int, message string) {
 	w.WriteHeader(code)
-
 	tmpl := template.Must(template.ParseFiles("templates/error.html"))
-
 	data := ErrorData{
 		Code:    code,
 		Message: message,
 	}
-
 	tmpl.Execute(w, data)
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		HandleError(w, http.StatusNotFound, "Page not found")
+		return
+	}
 	if r.Method != http.MethodGet {
 		HandleError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-
 	if !testApi(artistsCache[0].Image) {
-		HandleError(w, http.StatusInternalServerError, "internal server error")
+		HandleError(w, http.StatusBadGateway, "Could not reach artist image source")
 		return
 	}
 	tmpl := template.Must(template.ParseFiles("templates/index.html"))
@@ -68,27 +48,31 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func artistHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		HandleError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
 	if r.URL.RawQuery == "" {
 		HandleError(w, http.StatusBadRequest, "Missing artist ID")
 		return
 	}
 	idStr := r.URL.Query().Get("id")
+	if idStr == "" {
+		HandleError(w, http.StatusBadRequest, "Missing artist ID")
+		return
+	}
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		HandleError(w, http.StatusBadRequest, "Invalid artist ID")
+		HandleError(w, http.StatusBadRequest, "Artist ID must be a number")
 		return
 	}
 	if id < 1 || id > len(artistsCache) {
 		HandleError(w, http.StatusNotFound, "Artist not found")
 		return
 	}
-	if r.Method != http.MethodGet {
-		HandleError(w, http.StatusMethodNotAllowed, "Method not allowed")
-		return
-	}
 	if !testApi(artistsCache[id-1].Image) {
 		fmt.Println("url:", artistsCache[id-1].Image)
-		HandleError(w, http.StatusInternalServerError, "Failed to fetch image")
+		HandleError(w, http.StatusBadGateway, "Could not reach artist image source")
 		return
 	}
 	tmpl := template.Must(template.ParseFiles("templates/artist.html"))

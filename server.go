@@ -12,7 +12,9 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to load data:", err)
 	}
-	http.Handle("/static/", http.StripPrefix("/static/", http.HandlerFunc(handleStatic)))
+	http.HandleFunc("/static/style.css", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "static/style.css")
+	})
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/artist", artistHandler)
 
